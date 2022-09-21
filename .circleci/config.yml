@@ -1,64 +1,26 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  build:
+  say-hello:
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
-      - image: cimg/node:15.1
+      - image: cimg/base:stable
+    # Add steps to the job
+    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - restore_cache:
-          # See the configuration reference documentation for more details on using restore_cache and save_cache steps
-          # https://circleci.com/docs/2.0/configuration-reference/?section=reference#save_cache
-          keys:
-            - node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
-
-      # it's imperative to install npm packages so that Snyk will test the versions of the deps that will be part of the build
       - run:
-          name: install packages
-          command: npm ci
+          name: "Say hello"
+          command: "echo Hello, World!"
 
-      # {{ the build would normally happen here }}
-
-      - save_cache:
-          key: node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
-          paths:
-            - ~/.npm
-
-  snyk_scan:
-    docker:
-      - image: cimg/node:15.1
-    steps:
-      - checkout
-
-      # this next step makes sure that Snyk can access the manifest files and installed dependencies (from the previous job)
-      - restore_cache:
-          keys:
-            - node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
-
-      - run:
-          name: Snyk Setup
-          command: |
-            curl https://static.snyk.io/cli/latest/snyk-linux -o snyk
-            chmod +x ./snyk
-            sudo mv ./snyk /usr/local/bin/snyk
-          # {{ Use the circlci build logs to add the missing step to the snyk setup commands here }}
-          # Pass the authentication token to snyk using the $SNYK_TOKEN environment variable
-          # Never place a Snyk auth token directly in a pipeline configuration file
-          # (this is a 'hardcoded secret'!)
-
-        # (intructions page 2, step 1a)
-        # Add commands to this `run` step to execute a snyk test with the following criteria:
-        # - fail only on vulns where a fix (upgrade) is available
-        # - fail only for high or critical severity vulns
-      - run:
-          name: Snyk Test
-          command: |
-            snyk version
- 
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  tsm-bootcamp:
+  say-hello-workflow:
     jobs:
-      - build
-      - snyk_scan:
-          requires:
-            - build
+      - say-hello
